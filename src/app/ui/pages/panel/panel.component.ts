@@ -34,15 +34,21 @@ Chart.register(...registerables);
 export class PanelComponent implements OnInit, OnDestroy {
   private subscriptions: Subscription[] = [];
   currentUser = {} as User
-  isConnected = false;
-  connectionState: string = 'disconnected'; // Estado detallado de la conexión
+  isConnected = true; // DEMO: siempre conectado
+  connectionState: string = 'connected'; // DEMO: siempre conectado
   isMonitoring = false;
+  isDemoMode = true; // Bandera de modo demo
   currentUserId: number = 0;
   alerts: AlertData[] = [];
-  sensorStatus: any = null;
+  sensorStatus: any = { raspberry: true, MAX30102: true, MLX90614: true, ADB8232: true, MP520N004D: true }; // DEMO: sensores simulados
   patients: User[] = [];
   patientOptions: any[] = [];
-  selectedPatient: any; // Changed to any to accommodate primeng select options
+  selectedPatient: any;
+
+  // Variables para la simulación DEMO
+  private simulationInterval: any = null;
+  private simulationT = 0;
+  private simBases = { hr: 75, spo2: 97, temp: 36.5 };
 
   // Variables para controlar la navegación durante el monitoreo
   monitoringStartTime: Date | null = null;
@@ -50,21 +56,12 @@ export class PanelComponent implements OnInit, OnDestroy {
   private isOneMinutePassed = false;
   private beforeUnloadHandler: ((event: BeforeUnloadEvent) => void) | null = null;
 
-  // Variables para la simulación de datos en modo demo
-  private simulationInterval: any = null;
-  private simulationT = 0;
-  private simulationBases = {
-    hr: 75,
-    spo2: 98,
-    temp: 36.5
-  };
-
   // Propiedad para controlar si el botón de monitoreo está habilitado
   get canStartMonitoring(): boolean {
     if (this.currentUser.role === 'doctor') {
-      return this.isConnected && !this.isMonitoring && !!this.selectedPatient;
+      return !this.isMonitoring && !!this.selectedPatient;
     }
-    return this.isConnected && !this.isMonitoring;
+    return !this.isMonitoring;
   }
 
   // Configuración de visibilidad de gráficos
@@ -405,278 +402,93 @@ export class PanelComponent implements OnInit, OnDestroy {
     if (this.currentUser.role === 'doctor' && this.currentUser.id !== undefined) {
       this.userService.getPatients(this.currentUser.id).subscribe({
         next: (data) => {
-          console.log('Pacientes recibidos del backend:', data);
           this.patients = data;
-          this.patientOptions = data.map(patient => {
-            console.log('Procesando paciente:', patient);
-            return {
-              label: `${patient.name} ${patient.lastname}`,
-              value: patient
-            };
-          });
-          console.log('patientOptions creado:', this.patientOptions);
+          this.patientOptions = data.map(patient => ({
+            label: `${patient.name} ${patient.lastname}`,
+            value: patient
+          }));
         },
         error: (error) => {
           console.error('Error fetching patients:', error);
         }
       });
     }
-    // Conectar al WebSocket
-    this.websocketService.connect();
 
-    // Suscribirse al estado de conexión
-    this.subscriptions.push(
-      this.websocketService.connectionStatus$.subscribe(
-        status => {
-          this.isConnected = status;
-          console.log('Estado de conexión WebSocket:', status);
-        }
-      )
-    );
-
-    // Suscribirse al estado detallado de conexión
-    this.subscriptions.push(
-      this.websocketService.connectionState$.subscribe(
-        state => {
-          this.connectionState = state;
-          console.log('Estado detallado de conexión:', state);
-        }
-      )
-    );
-
-    // Suscribirse a datos de sensores
-    this.subscriptions.push(
-      this.websocketService.sensorData$.subscribe(
-        data => {
-          if (data) {
-            this.updateRealTimeData(data);
-          }
-        }
-      )
-    );
-
-    // Suscribirse a alertas (solo agregar a la lista, sin toast)
-    this.subscriptions.push(
-      this.websocketService.alerts$.subscribe(
-        alert => {
-          this.alerts.push(alert);
-          console.log('Nueva alerta recibida:', alert);
-        }
-      )
-    );
-
-    // Suscribirse al estado de sensores
-    this.subscriptions.push(
-      this.websocketService.sensorStatus$.subscribe(
-        status => {
-          if (status) {
-            this.sensorStatus = status;
-          }
-        }
-      )
-    );
-
-    // Suscribirse al estado de monitoreo (CRÍTICO para el funcionamiento)
-    this.subscriptions.push(
-      this.websocketService.monitoringStatus$.subscribe(
-        status => {
-          this.isMonitoring = status;
-          console.log('Estado de monitoreo actualizado:', status);
-        }
-      )
-    );
-
-    // Suscribirse a notificaciones de expedientes médicos creados
-    this.subscriptions.push(
-      this.websocketService.medicalRecordCreated$.subscribe(
-        medicalRecord => {
-          // Formatear la fecha del timestamp
-          const date = new Date(medicalRecord.timestamp * 1000);
-          const formattedDate = date.toLocaleString('es-ES', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-
-          // Mostrar toast con información del expediente médico
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Expediente Médico Creado',
-            detail: `${medicalRecord.message} - ${formattedDate}`,
-            life: 6000
-          });
-
-          // Log adicional para debugging
-          console.log('Nuevo expediente médico creado:', {
-            recordId: medicalRecord.record_id,
-            patientId: medicalRecord.patient_id,
-            doctorId: medicalRecord.doctor_id,
-            data: medicalRecord.data,
-            timestamp: formattedDate
-          });
-        }
-      )
-    );
-
-    // Sincronizar estado de monitoreo con el servicio
-    this.isMonitoring = this.websocketService.isMonitoringStatus();
+    // DEMO: No conectar WebSocket, iniciar simulación automáticamente
+    this.isConnected = true;
+    this.connectionState = 'connected';
+    this.isMonitoring = true;
+    this.startSimulation();
 
     // Inicializar visibilidad de gráficos
     this.updateChartVisibility();
   }
 
   ngOnDestroy() {
-    // Limpiar suscripciones
     this.subscriptions.forEach(sub => sub.unsubscribe());
-    // Limpiar timer y warnings de navegación
     this.clearOneMinuteTimer();
     this.removeNavigationWarning();
-    // Detener simulación si estaba activa
     this.stopSimulation();
-    // Desconectar del WebSocket
-    this.websocketService.disconnect();
   }
 
   startMonitoring() {
-    if (this.isConnected) {
-      // Mostrar toast notification
-      this.messageService.add({
-        severity: 'info',
-        summary: 'Monitoreo iniciado',
-        detail: 'Por favor, espere 1 minuto antes de cambiar de pantalla o detener la medicion',
-        life: 10000
-      });
-
-      // Configurar prevención de navegación y timer
-      this.setupNavigationWarning();
-      this.startOneMinuteTimer();
-
-      let patientIdToMonitor = this.currentUserId;
-
-      // Si es doctor y tiene un paciente seleccionado, usar el ID del paciente
-      if (this.currentUser.role === 'doctor') {
-        if (!this.selectedPatient) {
-          console.error('Error: El doctor debe seleccionar un paciente antes de iniciar el monitoreo');
-          alert('Por favor, selecciona un paciente antes de iniciar el monitoreo');
-          return;
-        }
-
-        console.log('selectedPatient completo:', this.selectedPatient);
-
-        // El selectedPatient contiene el objeto option completo, necesitamos acceder al value
-        const patient = this.selectedPatient.value || this.selectedPatient;
-        console.log('Paciente extraído:', patient);
-        console.log('Paciente ID:', patient.id);
-        console.log('Paciente name:', patient.name);
-
-        if (patient && patient.id) {
-          patientIdToMonitor = patient.id;
-          console.log('Monitoreando paciente:', patient.name, 'ID:', patientIdToMonitor);
-        } else {
-          console.error('Error: El paciente seleccionado no tiene ID definido');
-          alert('Error: El paciente seleccionado no tiene ID válido');
-          return;
-        }
-      }
-
-      this.websocketService.startMeasurement(patientIdToMonitor);
-      console.log('Monitoreo iniciado para paciente ID:', patientIdToMonitor);
-
-      // Iniciar simulación de datos para la DEMO
-      const doctorId = this.currentUser.role === 'doctor' ? this.currentUser.id : undefined;
-      this.startSimulation(patientIdToMonitor, doctorId);
-
-    } else {
-      console.error('WebSocket no está conectado');
-    }
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Monitoreo Demo',
+      detail: 'Simulación de datos en tiempo real iniciada',
+      life: 5000
+    });
+    this.isMonitoring = true;
+    this.startSimulation();
   }
 
   stopMonitoring() {
-    if (this.isConnected) {
-      let patientIdToStop = this.currentUserId;
-
-      // Si es doctor y tiene un paciente seleccionado, usar el ID del paciente
-      if (this.currentUser.role === 'doctor' && this.selectedPatient) {
-        const patient = this.selectedPatient.value || this.selectedPatient;
-        if (patient && patient.id) {
-          patientIdToStop = patient.id;
-        }
-      }
-
-      this.websocketService.stopMeasurement(patientIdToStop);
-      console.log('Monitoreo detenido para paciente ID:', patientIdToStop);
-
-      // Limpiar prevención de navegación y timer
-      this.clearOneMinuteTimer();
-      this.removeNavigationWarning();
-
-      // Detener simulación de datos
-      this.stopSimulation();
-
-    } else {
-      console.error('WebSocket no está conectado');
-    }
+    this.isMonitoring = false;
+    this.stopSimulation();
+    this.messageService.add({
+      severity: 'warn',
+      summary: 'Monitoreo detenido',
+      detail: 'Simulación de datos detenida',
+      life: 3000
+    });
   }
 
-  // Métodos de simulación para modo DEMO
-  private startSimulation(patientId: number, doctorId: number | undefined) {
+  // --- Simulación DEMO ---
+  private startSimulation() {
     if (this.simulationInterval) return;
-
     this.simulationInterval = setInterval(() => {
       this.simulationT += 0.1;
-      
-      // Ritmo Cardíaco (60-100 normal) - variación aleatoria suave
-      this.simulationBases.hr += (Math.random() - 0.5) * 5;
-      if (this.simulationBases.hr < 60) this.simulationBases.hr = 60;
-      if (this.simulationBases.hr > 100) this.simulationBases.hr = 100;
-      
-      // SpO2 (95-100 normal)
-      if (Math.random() > 0.8) {
-        this.simulationBases.spo2 += (Math.random() > 0.5 ? 1 : -1);
-      }
-      if (this.simulationBases.spo2 < 95) this.simulationBases.spo2 = 95;
-      if (this.simulationBases.spo2 > 100) this.simulationBases.spo2 = 100;
-      
-      // Temperatura (36.1 - 37.2 normal)
-      this.simulationBases.temp += (Math.random() - 0.5) * 0.1;
-      if (this.simulationBases.temp < 36.1) this.simulationBases.temp = 36.1;
-      if (this.simulationBases.temp > 37.2) this.simulationBases.temp = 37.2;
+      // Ritmo Cardíaco (60-100)
+      this.simBases.hr += (Math.random() - 0.5) * 4;
+      this.simBases.hr = Math.max(62, Math.min(98, this.simBases.hr));
+      const hr = Math.round(this.simBases.hr);
+      this.realTimeData.heartRate = hr;
+      this.updateHeartRateChart(hr);
 
-      // Presión arterial (sistólica 110-130, diastólica 70-85)
-      const sys = Math.floor(110 + Math.random() * 20);
-      const dia = Math.floor(70 + Math.random() * 15);
-      const bp = `${sys}/${dia}`;
+      // SpO2 (95-100)
+      if (Math.random() > 0.7) this.simBases.spo2 += (Math.random() > 0.5 ? 1 : -1);
+      this.simBases.spo2 = Math.max(95, Math.min(100, this.simBases.spo2));
+      this.realTimeData.spo2 = this.simBases.spo2;
+      this.updateSpo2Chart(this.simBases.spo2);
 
-      // ECG (simulando una onda sinusoidal con picos tipo QRS)
-      let ecgValue = 1800 + Math.sin(this.simulationT * 5) * 50; 
-      if (this.simulationT % 1 < 0.1) {
-        ecgValue += 400 + Math.random() * 200;
-      } else if (this.simulationT % 1 > 0.1 && this.simulationT % 1 < 0.15) {
-        ecgValue -= 200 + Math.random() * 100; // S wave
-      }
+      // Temperatura (36.1-37.2)
+      this.simBases.temp += (Math.random() - 0.5) * 0.08;
+      this.simBases.temp = Math.max(36.1, Math.min(37.2, this.simBases.temp));
+      const temp = parseFloat(this.simBases.temp.toFixed(1));
+      this.realTimeData.temperature = temp;
+      this.updateTemperatureChart(temp);
 
-      // Enviar datos simulados a la misma función que procesa los de websocket
-      const topics = ['temperatura', 'oxigeno', 'presion', 'ritmo_cardiaco', 'ecg'];
-      
-      topics.forEach(topic => {
-        const payload: any = { patient_id: patientId };
-        if (doctorId) payload.doctor_id = doctorId;
+      // Presión arterial
+      const sys = Math.floor(115 + Math.random() * 15);
+      const dia = Math.floor(72 + Math.random() * 12);
+      this.realTimeData.bloodPressure = { systolic: sys, diastolic: dia };
 
-        if (topic === 'temperatura') payload.temperature = parseFloat(this.simulationBases.temp.toFixed(1));
-        if (topic === 'oxigeno') payload.oxygen_saturation = this.simulationBases.spo2;
-        if (topic === 'presion') payload.blood_pressure = bp;
-        if (topic === 'ritmo_cardiaco') payload.heart_rate = Math.round(this.simulationBases.hr);
-        if (topic === 'ecg') payload.ecg = [ecgValue];
-        
-        this.updateRealTimeData({
-          topic,
-          data: payload
-        } as any);
-      });
-
-    }, 1000); // Generate data every second
+      // ECG
+      let ecg = 1800 + Math.sin(this.simulationT * 5) * 50;
+      if (this.simulationT % 1 < 0.1) ecg += 400 + Math.random() * 200;
+      else if (this.simulationT % 1 < 0.15) ecg -= 200 + Math.random() * 100;
+      this.updateEcgChart(ecg);
+    }, 1000);
   }
 
   private stopSimulation() {

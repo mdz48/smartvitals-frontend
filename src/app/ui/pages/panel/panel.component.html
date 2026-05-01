@@ -4,6 +4,14 @@
 <!-- Toast Notifications -->
 <p-toast></p-toast>
 
+<!-- Banner DEMO -->
+<div *ngIf="isDemoMode" class="demo-banner">
+  <div class="demo-banner-content">
+    <i class="pi pi-info-circle"></i>
+    <span><strong>Modo Demo</strong> — Los datos mostrados son simulados. Los sensores físicos no están conectados en esta versión de demostración.</span>
+  </div>
+</div>
+
 <!-- Contenido -->
 <div class="min-h-screen py-6 px-4 flex">
   <!-- Sidebar -->
@@ -71,7 +79,7 @@
           class="w-full bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed">
           {{ isMonitoring ? 'Monitoreando...' : 'Iniciar Monitoreo' }}
         </button>
-        <button (click)="stopMonitoring()" [disabled]="!isConnected || !isMonitoring"
+        <button (click)="stopMonitoring()" [disabled]="!isMonitoring"
           class="w-full bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed">
           Detener Monitoreo
         </button>

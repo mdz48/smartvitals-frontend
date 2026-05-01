@@ -88,3 +88,28 @@
   opacity: 0.6;
   filter: grayscale(20%);
 }
+
+/* Banner de modo DEMO */
+.demo-banner {
+  background: linear-gradient(135deg, #0C71A3 0%, #28749A 100%);
+  padding: 10px 20px;
+  box-shadow: 0 2px 8px rgba(12, 113, 163, 0.3);
+}
+
+.demo-banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: white;
+  font-size: 14px;
+}
+
+.demo-banner-content i {
+  font-size: 18px;
+  color: #ffc107;
+}
+
+.demo-banner-content strong {
+  color: #ffc107;
+}
