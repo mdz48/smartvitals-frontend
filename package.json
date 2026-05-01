@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "deploy": "ng build --configuration production --base-href /smartvitals-frontend/ && npx --yes angular-cli-ghpages --dir=dist/front-evotek/browser"
   },
   "private": true,
   "dependencies": {
