@@ -1,3 +1,50 @@
+<!-- Overlay de versión DEMO -->
+<div *ngIf="showDemoOverlay" class="demo-overlay" [class.demo-overlay-exit]="serverReady">
+  <div class="demo-card" [class.demo-card-ready]="serverReady">
+
+    <!-- Animated pulse ring behind logo -->
+    <div class="demo-pulse-ring"></div>
+
+    <!-- Logo -->
+    <img src="logo.png" alt="SmartVitals Logo" class="demo-logo" />
+
+    <!-- Título -->
+    <h1 class="demo-title">SmartVitals</h1>
+
+    <!-- Badge DEMO -->
+    <span class="demo-badge">VERSIÓN DEMO</span>
+
+    <!-- Mensaje descriptivo -->
+    <p class="demo-description">
+      Estás accediendo a una versión de demostración.
+      <br />
+      El servidor puede tardar hasta <strong>1 minuto</strong> en responder
+      mientras se inicia.
+    </p>
+
+    <!-- Status indicator -->
+    <div class="demo-status" [class.demo-status-ready]="serverReady">
+      <div *ngIf="!serverReady" class="demo-spinner">
+        <div class="demo-spinner-ring"></div>
+      </div>
+      <i *ngIf="serverReady" class="pi pi-check-circle demo-check-icon"></i>
+      <span class="demo-status-text">
+        {{ demoStatusMessage }}{{ !serverReady ? animatedDots : '' }}
+      </span>
+    </div>
+
+    <!-- Progress bar -->
+    <div *ngIf="!serverReady" class="demo-progress-track">
+      <div class="demo-progress-bar"></div>
+    </div>
+
+    <!-- Attempt counter -->
+    <p *ngIf="!serverReady && attemptCount > 1" class="demo-attempt-text">
+      Intento {{ attemptCount }}
+    </p>
+  </div>
+</div>
+
 <!-- Fondo animado SVG -->
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg"
   xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -97,6 +144,27 @@ s371.981,38.998,575.971,0s293.985-39.278,505.474,5.859s493.475,48.368,716.963-4.
             >
               No tengo cuenta
             </a>
+          </div>
+
+          <!-- Quick Login Demo Buttons -->
+          <div class="mt-6 pt-6 border-t border-white/20">
+            <p class="text-white text-xs text-center mb-3 opacity-80 uppercase tracking-wider font-semibold">Acceso Rápido Demo</p>
+            <div class="flex gap-3">
+              <button 
+                type="button"
+                (click)="quickLogin('patient')"
+                class="flex-1 bg-white/10 text-white border border-white/30 font-medium py-2 px-3 rounded-md hover:bg-white/20 transition-all duration-200 text-sm flex items-center justify-center gap-2"
+              >
+                <i class="pi pi-user"></i> Paciente
+              </button>
+              <button 
+                type="button"
+                (click)="quickLogin('doctor')"
+                class="flex-1 bg-white/10 text-white border border-white/30 font-medium py-2 px-3 rounded-md hover:bg-white/20 transition-all duration-200 text-sm flex items-center justify-center gap-2"
+              >
+                <i class="pi pi-briefcase"></i> Doctor
+              </button>
+            </div>
           </div>
 
           <!-- Error Message -->

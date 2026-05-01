@@ -50,6 +50,15 @@ export class PanelComponent implements OnInit, OnDestroy {
   private isOneMinutePassed = false;
   private beforeUnloadHandler: ((event: BeforeUnloadEvent) => void) | null = null;
 
+  // Variables para la simulación de datos en modo demo
+  private simulationInterval: any = null;
+  private simulationT = 0;
+  private simulationBases = {
+    hr: 75,
+    spo2: 98,
+    temp: 36.5
+  };
+
   // Propiedad para controlar si el botón de monitoreo está habilitado
   get canStartMonitoring(): boolean {
     if (this.currentUser.role === 'doctor') {
@@ -524,6 +533,8 @@ export class PanelComponent implements OnInit, OnDestroy {
     // Limpiar timer y warnings de navegación
     this.clearOneMinuteTimer();
     this.removeNavigationWarning();
+    // Detener simulación si estaba activa
+    this.stopSimulation();
     // Desconectar del WebSocket
     this.websocketService.disconnect();
   }
@@ -572,6 +583,11 @@ export class PanelComponent implements OnInit, OnDestroy {
 
       this.websocketService.startMeasurement(patientIdToMonitor);
       console.log('Monitoreo iniciado para paciente ID:', patientIdToMonitor);
+
+      // Iniciar simulación de datos para la DEMO
+      const doctorId = this.currentUser.role === 'doctor' ? this.currentUser.id : undefined;
+      this.startSimulation(patientIdToMonitor, doctorId);
+
     } else {
       console.error('WebSocket no está conectado');
     }
@@ -595,8 +611,78 @@ export class PanelComponent implements OnInit, OnDestroy {
       // Limpiar prevención de navegación y timer
       this.clearOneMinuteTimer();
       this.removeNavigationWarning();
+
+      // Detener simulación de datos
+      this.stopSimulation();
+
     } else {
       console.error('WebSocket no está conectado');
+    }
+  }
+
+  // Métodos de simulación para modo DEMO
+  private startSimulation(patientId: number, doctorId: number | undefined) {
+    if (this.simulationInterval) return;
+
+    this.simulationInterval = setInterval(() => {
+      this.simulationT += 0.1;
+      
+      // Ritmo Cardíaco (60-100 normal) - variación aleatoria suave
+      this.simulationBases.hr += (Math.random() - 0.5) * 5;
+      if (this.simulationBases.hr < 60) this.simulationBases.hr = 60;
+      if (this.simulationBases.hr > 100) this.simulationBases.hr = 100;
+      
+      // SpO2 (95-100 normal)
+      if (Math.random() > 0.8) {
+        this.simulationBases.spo2 += (Math.random() > 0.5 ? 1 : -1);
+      }
+      if (this.simulationBases.spo2 < 95) this.simulationBases.spo2 = 95;
+      if (this.simulationBases.spo2 > 100) this.simulationBases.spo2 = 100;
+      
+      // Temperatura (36.1 - 37.2 normal)
+      this.simulationBases.temp += (Math.random() - 0.5) * 0.1;
+      if (this.simulationBases.temp < 36.1) this.simulationBases.temp = 36.1;
+      if (this.simulationBases.temp > 37.2) this.simulationBases.temp = 37.2;
+
+      // Presión arterial (sistólica 110-130, diastólica 70-85)
+      const sys = Math.floor(110 + Math.random() * 20);
+      const dia = Math.floor(70 + Math.random() * 15);
+      const bp = `${sys}/${dia}`;
+
+      // ECG (simulando una onda sinusoidal con picos tipo QRS)
+      let ecgValue = 1800 + Math.sin(this.simulationT * 5) * 50; 
+      if (this.simulationT % 1 < 0.1) {
+        ecgValue += 400 + Math.random() * 200;
+      } else if (this.simulationT % 1 > 0.1 && this.simulationT % 1 < 0.15) {
+        ecgValue -= 200 + Math.random() * 100; // S wave
+      }
+
+      // Enviar datos simulados a la misma función que procesa los de websocket
+      const topics = ['temperatura', 'oxigeno', 'presion', 'ritmo_cardiaco', 'ecg'];
+      
+      topics.forEach(topic => {
+        const payload: any = { patient_id: patientId };
+        if (doctorId) payload.doctor_id = doctorId;
+
+        if (topic === 'temperatura') payload.temperature = parseFloat(this.simulationBases.temp.toFixed(1));
+        if (topic === 'oxigeno') payload.oxygen_saturation = this.simulationBases.spo2;
+        if (topic === 'presion') payload.blood_pressure = bp;
+        if (topic === 'ritmo_cardiaco') payload.heart_rate = Math.round(this.simulationBases.hr);
+        if (topic === 'ecg') payload.ecg = [ecgValue];
+        
+        this.updateRealTimeData({
+          topic,
+          data: payload
+        } as any);
+      });
+
+    }, 1000); // Generate data every second
+  }
+
+  private stopSimulation() {
+    if (this.simulationInterval) {
+      clearInterval(this.simulationInterval);
+      this.simulationInterval = null;
     }
   }
 
