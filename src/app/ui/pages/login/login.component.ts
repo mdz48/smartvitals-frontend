@@ -2,7 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { timeout } from 'rxjs';
 import { AuthService } from '../../../auth/auth.service'; 
 import { RegisterModalComponent } from '../../components/register/register.component';
 import { User } from '../../../features/user/models/user';
@@ -30,9 +31,11 @@ export class LoginComponent implements OnInit, OnDestroy {
   serverReady = false;
   demoStatusMessage = 'Conectando con el servidor...';
   healthCheckInterval: any = null;
+  overlayTimeout: any = null;
   dotCount = 0;
   dotInterval: any = null;
   attemptCount = 0;
+  healthBlockedByClient = false;
 
   constructor(
     private authService: AuthService,
@@ -52,6 +55,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     // Iniciar polling del health check
     this.startHealthCheck();
     this.startDotAnimation();
+    this.startOverlayTimeout();
   }
 
   ngOnDestroy(): void {
@@ -60,6 +64,9 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
     if (this.dotInterval) {
       clearInterval(this.dotInterval);
+    }
+    if (this.overlayTimeout) {
+      clearTimeout(this.overlayTimeout);
     }
   }
 
@@ -83,19 +90,45 @@ export class LoginComponent implements OnInit, OnDestroy {
     }, 5000);
   }
 
+  private startOverlayTimeout(): void {
+    this.overlayTimeout = setTimeout(() => {
+      if (this.serverReady) {
+        return;
+      }
+
+      this.demoStatusMessage = 'No se pudo validar el estado. Puedes continuar.';
+      this.onServerReady(false);
+    }, 12000);
+  }
+
   private checkHealth(): void {
+    if (this.serverReady || this.healthBlockedByClient) {
+      return;
+    }
+
     this.attemptCount++;
 
-    // Construir la URL base (quitar /api del final)
-    const baseUrl = environment.API_URL.replace(/\/api$/, '');
-
-    this.http.get<{ status: string }>(`${baseUrl}/health`).subscribe({
-      next: (response) => {
-        if (response.status === 'ok') {
-          this.onServerReady();
-        }
+    this.http.get(environment.API_URL, { observe: 'response' })
+      .pipe(timeout(4000))
+      .subscribe({
+      next: () => {
+        this.onServerReady(true);
       },
-      error: () => {
+      error: (error: HttpErrorResponse) => {
+        // Si hay cualquier código HTTP, el backend ya respondió (aunque sea 401/404).
+        if (error.status > 0) {
+          this.onServerReady(true);
+          return;
+        }
+
+        if (this.isBlockedByClient(error)) {
+          this.healthBlockedByClient = true;
+          this.demoStatusMessage = 'uBlock bloqueó la verificación. Continuando...';
+          this.wakeServerWithoutHealth();
+          this.onServerReady(false);
+          return;
+        }
+
         // El servidor aún no responde, actualizar mensaje
         if (this.attemptCount <= 3) {
           this.demoStatusMessage = 'Iniciando el servidor';
@@ -108,7 +141,27 @@ export class LoginComponent implements OnInit, OnDestroy {
     });
   }
 
-  private onServerReady(): void {
+  private isBlockedByClient(error: HttpErrorResponse): boolean {
+    const message = `${error.message ?? ''} ${String(error.error ?? '')}`.toLowerCase();
+    return message.includes('err_blocked_by_client') || message.includes('blocked by client');
+  }
+
+  private wakeServerWithoutHealth(): void {
+    fetch(environment.API_URL, {
+      method: 'GET',
+      mode: 'no-cors',
+      cache: 'no-store',
+      keepalive: true
+    }).catch(() => {
+      // Ignorar: el objetivo es evitar bloqueo de UI cuando /health es filtrado.
+    });
+  }
+
+  private onServerReady(verifiedByHealth: boolean): void {
+    if (this.serverReady) {
+      return;
+    }
+
     // Limpiar intervalos
     if (this.healthCheckInterval) {
       clearInterval(this.healthCheckInterval);
@@ -118,9 +171,13 @@ export class LoginComponent implements OnInit, OnDestroy {
       clearInterval(this.dotInterval);
       this.dotInterval = null;
     }
+    if (this.overlayTimeout) {
+      clearTimeout(this.overlayTimeout);
+      this.overlayTimeout = null;
+    }
 
     this.serverReady = true;
-    this.demoStatusMessage = '¡Servidor listo!';
+    this.demoStatusMessage = verifiedByHealth ? '¡Servidor listo!' : 'Listo, continúa con tu acceso';
 
     // Guardar en sessionStorage para no volver a mostrar en esta sesión
     sessionStorage.setItem('serverReady', 'true');
