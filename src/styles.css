@@ -1,0 +1,218 @@
+@import 'primeicons/primeicons.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+* {
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, sans-serif;
+    margin: 0;
+    
+}
+
+body {
+    background-color: #E9E3E3;
+    /* overflow: hidden;     */
+}
+
+.p-component {
+    font-family: system-ui, -apple-system, sans-serif;
+    color: black;
+}
+
+/* Asegurar que PrimeNG no afecte el texto global */
+.p-calendar .p-datepicker {
+    font-family: system-ui, -apple-system, sans-serif;
+    color: black;
+}
+
+/* ===== BOTONES PRIMENG ESTANDARIZADOS ===== */
+
+/* Botón Primary (por defecto) */
+.p-button {
+    font-family: system-ui, -apple-system, sans-serif;
+    color: white !important;
+    background-color: #4695BD !important;
+    border-color: #4695BD !important;
+    transition: all 0.3s ease;
+}
+
+.p-button:hover:not(:disabled) {
+    background-color: #3a7a9a !important;
+    border-color: #3a7a9a !important;
+}
+
+.p-button:focus {
+    box-shadow: 0 0 0 2px rgba(70, 149, 189, 0.3) !important;
+}
+
+/* Botón Secondary */
+.p-button.p-button-secondary {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: white !important;
+}
+
+.p-button.p-button-secondary:hover:not(:disabled) {
+    background-color: #545b62 !important;
+    border-color: #545b62 !important;
+}
+
+/* Botón Success */
+.p-button.p-button-success {
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+    color: white !important;
+}
+
+.p-button.p-button-success:hover:not(:disabled) {
+    background-color: #218838 !important;
+    border-color: #218838 !important;
+}
+
+/* Botón Info */
+.p-button.p-button-info {
+    background-color: #17a2b8 !important;
+    border-color: #17a2b8 !important;
+    color: white !important;
+}
+
+.p-button.p-button-info:hover:not(:disabled) {
+    background-color: #138496 !important;
+    border-color: #138496 !important;
+}
+
+/* Botón Warning */
+.p-button.p-button-warning {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.p-button.p-button-warning:hover:not(:disabled) {
+    background-color: #e0a800 !important;
+    border-color: #e0a800 !important;
+}
+
+/* Botón Danger */
+.p-button.p-button-danger {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: white !important;
+}
+
+.p-button.p-button-danger:hover:not(:disabled) {
+    background-color: #c82333 !important;
+    border-color: #c82333 !important;
+}
+
+/* Botones Outlined */
+.p-button.p-button-outlined {
+    background-color: transparent !important;
+    border: 2px solid #4695BD !important;
+    color: #4695BD !important;
+}
+
+.p-button.p-button-outlined:hover:not(:disabled) {
+    background-color: #4695BD !important;
+    color: white !important;
+}
+
+.p-button.p-button-outlined.p-button-secondary {
+    border-color: #6c757d !important;
+    color: #6c757d !important;
+}
+
+.p-button.p-button-outlined.p-button-secondary:hover:not(:disabled) {
+    background-color: #6c757d !important;
+    color: white !important;
+}
+
+.p-button.p-button-outlined.p-button-success {
+    border-color: #28a745 !important;
+    color: #28a745 !important;
+}
+
+.p-button.p-button-outlined.p-button-success:hover:not(:disabled) {
+    background-color: #28a745 !important;
+    color: white !important;
+}
+
+.p-button.p-button-outlined.p-button-danger {
+    border-color: #dc3545 !important;
+    color: #dc3545 !important;
+}
+
+.p-button.p-button-outlined.p-button-danger:hover:not(:disabled) {
+    background-color: #dc3545 !important;
+    color: white !important;
+}
+
+.p-button.p-button-outlined.p-button-warning {
+    border-color: #ffc107 !important;
+    color: #ffc107 !important;
+}
+
+.p-button.p-button-outlined.p-button-warning:hover:not(:disabled) {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+/* Botones Text (solo texto) */
+.p-button.p-button-text {
+    background-color: transparent !important;
+    border: none !important;
+    color: #4695BD !important;
+}
+
+.p-button.p-button-text:hover:not(:disabled) {
+    background-color: rgba(70, 149, 189, 0.1) !important;
+}
+
+/* Botones Text Secondary (gris) */
+.p-button.p-button-text.p-button-secondary {
+    background-color: transparent !important;
+    border: none !important;
+    color: #6c757d !important;
+}
+
+.p-button.p-button-text.p-button-secondary:hover:not(:disabled) {
+    background-color: rgba(108, 117, 125, 0.1) !important;
+    color: #545b62 !important;
+}
+
+/* Mejorar visibilidad del icono en botones info-text (como descargar PDF) */
+.p-button.p-button-info.p-button-text .p-button-icon {
+    color: #4695BD !important;
+    opacity: 1 !important;
+}
+
+/* Botones pequeños */
+.p-button.p-button-sm {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+}
+
+/* Botones grandes */
+.p-button.p-button-lg {
+    font-size: 1.125rem;
+    padding: 0.75rem 1.5rem;
+}
+
+/* Estado deshabilitado */
+.p-button:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+}
+
+/* Botones con loading */
+.p-button .p-button-icon.pi-spin {
+    animation: p-icon-spin 2s infinite linear;
+}
+
+@keyframes p-icon-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+

@@ -1,0 +1,227 @@
+.users-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+.header-section {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.header-section h1 {
+  color: #2c3e50;
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.header-section p {
+  color: #6c757d;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Estilos para la tabla */
+::ng-deep .p-datatable {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+::ng-deep .p-datatable .p-datatable-header {
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  padding: 1rem;
+}
+
+::ng-deep .p-datatable .p-datatable-thead > tr > th {
+  background: #4695BD;
+  color: white;
+  border: none;
+  padding: 1rem;
+  font-weight: 600;
+}
+
+::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+::ng-deep .p-datatable .p-datatable-tbody > tr:hover {
+  background: #f8f9fa;
+}
+
+/* Avatar del usuario */
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #dee2e6;
+}
+
+/* Botones de acción */
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+::ng-deep .action-buttons .p-button {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+/* Estilos para el dialog */
+::ng-deep .p-dialog {
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+::ng-deep .p-dialog .p-dialog-header {
+  background: #4695BD;
+  color: white;
+  border-radius: 10px 10px 0 0;
+  padding: 1.5rem;
+}
+
+::ng-deep .p-dialog .p-dialog-content {
+  padding: 1.5rem;
+}
+
+::ng-deep .p-dialog .p-dialog-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #dee2e6;
+}
+
+/* Campos del formulario */
+.field {
+  margin-bottom: 1.5rem;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+::ng-deep .field .p-inputtext,
+::ng-deep .field .p-dropdown,
+::ng-deep .field .p-inputnumber,
+::ng-deep .field .p-password {
+  width: 100%;
+}
+
+::ng-deep .field .p-inputtext:focus,
+::ng-deep .field .p-dropdown:focus {
+  border-color: #4695BD;
+  box-shadow: 0 0 0 0.2rem rgba(70, 149, 189, 0.25);
+}
+
+/* Validación */
+::ng-deep .ng-invalid.ng-dirty {
+  border-color: #dc3545;
+}
+
+.ng-dirty.ng-invalid {
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+/* Tags para roles */
+::ng-deep .p-tag {
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Toolbar */
+::ng-deep .p-toolbar {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .users-container {
+    padding: 15px;
+  }
+  
+  .header-section h1 {
+    font-size: 2rem;
+  }
+  
+  ::ng-deep .p-datatable .p-datatable-thead > tr > th,
+  ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .user-avatar {
+    width: 30px;
+    height: 30px;
+  }
+  
+  ::ng-deep .action-buttons .p-button {
+    width: 2rem;
+    height: 2rem;
+  }
+  
+  ::ng-deep .p-dialog {
+    width: 95% !important;
+    max-width: 400px;
+  }
+}
+
+/* Estilos para estados */
+.text-green-500 {
+  color: #10b981;
+}
+
+.text-red-500 {
+  color: #ef4444;
+}
+
+/* Loading overlay */
+::ng-deep .p-datatable .p-datatable-loading-overlay {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+::ng-deep .p-datatable .p-datatable-loading-icon {
+  font-size: 2rem;
+  color: #4695BD;
+}
+
+/* File upload */
+::ng-deep .p-fileupload .p-fileupload-choose {
+  background: #4695BD;
+  border-color: #4695BD;
+}
+
+::ng-deep .p-fileupload .p-fileupload-choose:hover {
+  background: #3a7ba0;
+  border-color: #3a7ba0;
+}
+
+/* Checkbox para embarazada */
+::ng-deep .p-checkbox .p-checkbox-box.p-highlight {
+  background: #4695BD;
+  border-color: #4695BD;
+}
+
+/* Botones del footer del dialog */
+::ng-deep .p-dialog .p-dialog-footer .p-button:last-child {
+  background: #4695BD;
+  border-color: #4695BD;
+}
+
+::ng-deep .p-dialog .p-dialog-footer .p-button:last-child:hover {
+  background: #3a7ba0;
+  border-color: #3a7ba0;
+}

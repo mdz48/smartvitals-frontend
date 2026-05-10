@@ -1,0 +1,204 @@
+<app-navbar></app-navbar>
+
+<!-- Toast para mensajes -->
+<p-toast></p-toast>
+
+<!-- Confirmación de eliminación -->
+<p-confirmDialog></p-confirmDialog>
+
+<div class="users-container">
+    <div class="header-section">
+        <h1>Gestión de Usuarios</h1>
+        <p>Administrar todos los usuarios del sistema</p>
+    </div>
+
+    <p-card>
+        <p-toolbar styleClass="mb-4 gap-2">
+            <ng-template pTemplate="left">
+                <p-button severity="success" label="Nuevo Usuario" icon="pi pi-plus" class="mr-2" (onClick)="openNew()">
+                </p-button>
+            </ng-template>
+        </p-toolbar>
+
+        <p-table [value]="users" [loading]="loading" [globalFilterFields]="['name', 'lastname', 'email', 'role']"
+            dataKey="id" styleClass="p-datatable-gridlines" [tableStyle]="{'min-width': '50rem'}" [paginator]="true"
+            [rows]="10" [rowsPerPageOptions]="[5, 10, 20]" [showCurrentPageReport]="true"
+            currentPageReportTemplate="Mostrando {first} - {last} de {totalRecords} usuarios" #dt>
+
+            <ng-template pTemplate="header">
+                <tr>
+                    <th colspan="10">
+                        <div class="flex justify-content-between align-items-center">
+                            <span class="p-input-icon-left w-full">
+                                <i class="pi pi-search"></i>
+                                <input pInputText type="text"
+                                    (input)="dt.filterGlobal($any($event.target).value, 'contains')"
+                                    placeholder="Buscar usuarios..." class="w-full">
+                            </span>
+                        </div>
+                    </th>
+                </tr>
+                <tr>
+                    <th pSortableColumn="id">
+                        ID <p-sortIcon field="id"></p-sortIcon>
+                    </th>
+                    <th>Foto</th>
+                    <th pSortableColumn="name">
+                        Nombre <p-sortIcon field="name"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="lastname">
+                        Apellido <p-sortIcon field="lastname"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="email">
+                        Email <p-sortIcon field="email"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="role">
+                        Rol <p-sortIcon field="role"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="gender">
+                        Género <p-sortIcon field="gender"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="age">
+                        Edad <p-sortIcon field="age"></p-sortIcon>
+                    </th>
+                    <th>Embarazada</th>
+                    <th>Acciones</th>
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-user>
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>
+                        <img [src]="user.profile_picture || 'logo.png'" [alt]="user.name" class="user-avatar">
+                    </td>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.lastname }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        <p-tag [value]="getRoleLabel(user.role)" [severity]="getRoleSeverity(user.role)">
+                        </p-tag>
+                    </td>
+                    <td>{{ getGenderLabel(user.gender) }}</td>
+                    <td>{{ user.age }}</td>
+                    <td>
+                        <i class="pi" [ngClass]="user.pregnant ? 'pi-check text-green-500' : 'pi-times text-red-500'"
+                            *ngIf="user.gender === 'female'">
+                        </i>
+                        <span *ngIf="user.gender !== 'female'">-</span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <p-button icon="pi pi-pencil" class="mr-2" severity="info" [text]="true" [rounded]="true"
+                                pTooltip="Editar" tooltipPosition="top" (onClick)="editUser(user)">
+                            </p-button>
+                            <p-button icon="pi pi-trash" severity="danger" [text]="true" [rounded]="true"
+                                pTooltip="Eliminar" tooltipPosition="top" [disabled]="user.id === currentUser.id"
+                                (onClick)="deleteUser(user)">
+                            </p-button>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="10">No se encontraron usuarios.</td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </p-card>
+</div>
+
+<!-- Dialog para editar/crear usuario -->
+<p-dialog [(visible)]="userDialog" [style]="{width: '450px'}" header="Detalles del Usuario" [modal]="true"
+    class="p-fluid">
+
+    <ng-template pTemplate="content">
+        <div class="field">
+            <label for="name">Nombre *</label>
+            <input type="text" pInputText id="name" [(ngModel)]="editingUser.name" required autofocus
+                [class.ng-invalid]="!editingUser.name">
+            <small class="ng-dirty ng-invalid" *ngIf="!editingUser.name">El nombre es requerido.</small>
+        </div>
+
+        <div class="field">
+            <label for="lastname">Apellido *</label>
+            <input type="text" pInputText id="lastname" [(ngModel)]="editingUser.lastname" required
+                [class.ng-invalid]="!editingUser.lastname">
+            <small class="ng-dirty ng-invalid" *ngIf="!editingUser.lastname">El apellido es requerido.</small>
+        </div>
+
+        <div class="field">
+            <label for="email">Email *</label>
+            <input type="email" pInputText id="email" [(ngModel)]="editingUser.email" required
+                [class.ng-invalid]="!editingUser.email">
+            <small class="ng-dirty ng-invalid" *ngIf="!editingUser.email">El email es requerido.</small>
+        </div>
+
+        <div class="field">
+            <label for="role">Rol</label>
+            <p-dropdown id="role" [options]="roleOptions" [(ngModel)]="editingUser.role" optionLabel="label"
+                optionValue="value" placeholder="Seleccionar rol">
+            </p-dropdown>
+        </div>
+
+        <div class="field">
+            <label for="gender">Género</label>
+            <p-dropdown id="gender" [options]="genderOptions" [(ngModel)]="editingUser.gender" optionLabel="label"
+                optionValue="value" placeholder="Seleccionar género">
+            </p-dropdown>
+        </div>
+
+        <div class="field">
+            <label for="age">Edad</label>
+            <p-inputNumber id="age" [(ngModel)]="editingUser.age" [min]="1" [max]="120">
+            </p-inputNumber>
+        </div>
+
+        <div class="field" *ngIf="editingUser.gender === 'female'">
+            <label for="pregnant">¿Embarazada?</label>
+            <p-checkbox id="pregnant" [(ngModel)]="editingUser.pregnant" [binary]="true">
+            </p-checkbox>
+        </div>
+
+        <div class="field">
+            <label for="password">Nueva Contraseña (opcional)</label>
+            <p-password id="password" [(ngModel)]="editingUser.password" [toggleMask]="true"
+                placeholder="Dejar en blanco para mantener la actual">
+            </p-password>
+        </div>
+
+        <div class="field">
+            <label for="profilePicture">Foto de Perfil</label>
+            <p-fileUpload mode="basic" name="profilePicture" [auto]="false" accept="image/*" [maxFileSize]="5000000"
+                (onSelect)="onFileSelect($event)" chooseLabel="Seleccionar Imagen">
+            </p-fileUpload>
+        </div>
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+        <p-button label="Cancelar" icon="pi pi-times" [text]="true" (onClick)="hideDialog()">
+        </p-button>
+        <p-button label="Guardar" icon="pi pi-check" [text]="true" (onClick)="saveUser()">
+        </p-button>
+    </ng-template>
+</p-dialog>
+
+<!-- Dialog de confirmación de eliminación -->
+<p-dialog [(visible)]="deleteUserDialog" header="Confirmar Eliminación" [modal]="true" [style]="{width:'450px'}">
+
+    <div class="flex align-items-center justify-content-center">
+        <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem"></i>
+        <span *ngIf="selectedUser">
+            ¿Estás seguro de que quieres eliminar a <b>{{ selectedUser.name }} {{ selectedUser.lastname }}</b>?
+        </span>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button label="No" icon="pi pi-times" [text]="true" (onClick)="deleteUserDialog = false">
+        </p-button>
+        <p-button label="Sí" icon="pi pi-check" [text]="true" (onClick)="confirmDelete()">
+        </p-button>
+    </ng-template>
+</p-dialog>

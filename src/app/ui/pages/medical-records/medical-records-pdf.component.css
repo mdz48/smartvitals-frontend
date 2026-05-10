@@ -1,0 +1,73 @@
+/* Estilos adicionales para mejorar la apariencia de los botones de descarga */
+
+.download-button {
+  transition: all 0.3s ease;
+}
+
+.download-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.download-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Animación del spinner de carga */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Estilos para el estado de descarga */
+.downloading {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+}
+
+.downloading:hover {
+  background-color: #5a6268 !important;
+  border-color: #545b62 !important;
+}
+
+/* Mejoras para la vista de expedientes */
+.record-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.record-table th,
+.record-table td {
+  border-bottom: 1px solid #dee2e6;
+}
+
+.record-table tbody tr:hover {
+  background-color: #f8f9fa;
+  transition: background-color 0.2s ease;
+}
+
+/* Estilos para estados de éxito y error */
+.success-message {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+}

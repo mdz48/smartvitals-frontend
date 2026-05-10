@@ -1,0 +1,128 @@
+<app-navbar></app-navbar>
+<div class="profile-container">
+  <p-toast></p-toast>
+
+  <p-card header="Mi Perfil" subheader="Actualiza tu información personal">
+    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="profile-form">
+
+      <!-- Foto de perfil -->
+      <div class="profile-image-section">
+        <div class="current-image">
+          <p-avatar [image]="profileImageUrl" size="xlarge" shape="circle"
+            [label]="!profileImageUrl ? getUserInitials() : undefined"
+            [style]="!profileImageUrl ? {'background-color': '#4f46e5', 'color': 'white', 'font-weight': 'bold'} : {}">
+          </p-avatar>
+        </div>
+
+        <div class="image-upload">
+          <p-fileUpload mode="basic" chooseLabel="Cambiar foto" accept="image/*"
+            (onSelect)="onFileSelect($event)" [auto]="true" chooseIcon="pi pi-camera">
+          </p-fileUpload>
+        </div>
+      </div>
+
+      <!-- Información personal -->
+      <div class="form-grid">
+
+        <!-- Nombre -->
+        <div class="form-field">
+          <label for="name">Nombre *</label>
+          <input pInputText id="name" formControlName="name" [class.ng-invalid]="isFieldInvalid('name')"
+            placeholder="Ingresa tu nombre">
+          <small class="p-error" *ngIf="isFieldInvalid('name')">
+            {{ getFieldError('name') }}
+          </small>
+        </div>
+
+        <!-- Apellido -->
+        <div class="form-field">
+          <label for="lastname">Apellido *</label>
+          <input pInputText id="lastname" formControlName="lastname" [class.ng-invalid]="isFieldInvalid('lastname')"
+            placeholder="Ingresa tu apellido">
+          <small class="p-error" *ngIf="isFieldInvalid('lastname')">
+            {{ getFieldError('lastname') }}
+          </small>
+        </div>
+
+        <!-- Email -->
+        <div class="form-field full-width">
+          <label for="email">Correo electrónico *</label>
+          <input pInputText id="email" formControlName="email" [class.ng-invalid]="isFieldInvalid('email')"
+            placeholder="correo@ejemplo.com">
+          <small class="p-error" *ngIf="isFieldInvalid('email')">
+            {{ getFieldError('email') }}
+          </small>
+        </div>
+
+        <!-- Rol (solo si es admin) -->
+        <div class="form-field full-width" *ngIf="currentUser?.role === 'admin'">
+          <label for="role">Rol *</label>
+          <p-dropdown id="role" formControlName="role" [options]="roleOptions" placeholder="Selecciona un rol"
+            [class.ng-invalid]="isFieldInvalid('role')">
+          </p-dropdown>
+          <small class="p-error" *ngIf="isFieldInvalid('role')">
+            {{ getFieldError('role') }}
+          </small>
+        </div>
+
+        <!-- Género -->
+        <div class="form-field">
+          <label for="gender">Género</label>
+          <p-dropdown id="gender" formControlName="gender" [options]="genderOptions" placeholder="Selecciona género"
+            [class.ng-invalid]="isFieldInvalid('gender')">
+          </p-dropdown>
+          <small class="p-error" *ngIf="isFieldInvalid('gender')">
+            {{ getFieldError('gender') }}
+          </small>
+        </div>
+
+        <!-- Edad -->
+        <div class="form-field">
+          <label for="age">Edad</label>
+          <p-inputNumber id="age" formControlName="age" [min]="1" [max]="120" [showButtons]="true"
+            [class.ng-invalid]="isFieldInvalid('age')" placeholder="Tu edad">
+          </p-inputNumber>
+          <small class="p-error" *ngIf="isFieldInvalid('age')">
+            {{ getFieldError('age') }}
+          </small>
+        </div>
+
+        <!-- Embarazo (solo para mujeres) -->
+        <div class="form-field full-width" *ngIf="isPregnancyFieldVisible">
+          <div class="checkbox-field">
+            <p-checkbox id="pregnant" formControlName="pregnant" binary="true">
+            </p-checkbox>
+            <label for="pregnant">¿Está embarazada?</label>
+          </div>
+        </div>
+
+        <!-- Contraseña -->
+        <div class="form-field full-width">
+          <label for="password">Cambiar contraseña</label>
+          <p-password id="password" formControlName="password" [toggleMask]="true" [feedback]="false"
+            [class.ng-invalid]="isFieldInvalid('password')" placeholder="Dejar vacío para no cambiar">
+          </p-password>
+          <small class="p-error" *ngIf="isFieldInvalid('password')">
+            {{ getFieldError('password') }}
+          </small>
+          <small class="field-help">
+            Deja este campo vacío si no deseas cambiar tu contraseña
+          </small>
+        </div>
+
+      </div>
+
+      <!-- Botones -->
+      <div class="form-actions">
+        <p-button type="submit" label="Guardar cambios" icon="pi pi-check" [loading]="isLoading"
+          [disabled]="profileForm.invalid || isLoading || !hasChanges">
+        </p-button>
+
+        <p-button type="button" label="Cancelar" icon="pi pi-times" severity="secondary" [disabled]="isLoading"
+          (onClick)="resetForm()">
+        </p-button>
+      </div>
+
+    </form>
+  </p-card>
+</div>

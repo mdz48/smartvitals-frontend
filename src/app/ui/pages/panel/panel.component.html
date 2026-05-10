@@ -1,0 +1,251 @@
+<!-- Navbar -->
+<app-navbar></app-navbar>
+
+<!-- Toast Notifications -->
+<p-toast></p-toast>
+
+<!-- Contenido -->
+<div class="min-h-screen py-6 px-4 flex">
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white p-4 shadow-md rounded-r-lg h-fit">
+    <h2 class="text-lg font-semibold mb-4">Hardware Conectado</h2>
+    <ul class="space-y-2 text-sm">
+      <li class="flex justify-between">
+        <span>Raspberry Pi 4</span>
+        <span [ngClass]="sensorStatus?.raspberry ? 'text-green-600 font-semibold' : 'text-red-500 font-semibold'">
+          {{ sensorStatus?.raspberry ? 'Online' : 'Offline' }}
+        </span>
+      </li>
+      <li class="flex justify-between">
+        <span>MAX30102</span>
+        <span [ngClass]="sensorStatus?.MAX30102 ? 'text-green-600 font-semibold' : 'text-red-500 font-semibold'">
+          {{ sensorStatus?.MAX30102 ? 'Detectado' : 'Desconectado' }}
+        </span>
+      </li>
+      <li class="flex justify-between">
+        <span>MLX90614</span>
+        <span [ngClass]="sensorStatus?.MLX90614 ? 'text-green-600 font-semibold' : 'text-red-500 font-semibold'">
+          {{ sensorStatus?.MLX90614 ? 'Detectado' : 'Desconectado' }}
+        </span>
+      </li>
+      <li class="flex justify-between">
+        <span>AD8232</span>
+        <span [ngClass]="sensorStatus?.ADB8232 ? 'text-green-600 font-semibold' : 'text-red-500 font-semibold'">
+          {{ sensorStatus?.ADB8232 ? 'Detectado' : 'Desconectado' }}
+        </span>
+      </li>
+      <li class="flex justify-between">
+        <span>MP520N004D</span>
+        <span [ngClass]="sensorStatus?.MP520N004D ? 'text-green-600 font-semibold' : 'text-red-500 font-semibold'">
+          {{ sensorStatus?.MP520N004D ? 'Detectado' : 'Desconectado' }}
+        </span>
+      </li>
+    </ul>
+
+    <!-- Estado de WebSocket -->
+    <div class="mt-6 p-3 bg-gray-50 rounded-lg">
+      <h3 class="font-semibold mb-2">Estado de Conexión</h3>
+      <div class="flex items-center space-x-2" [ngSwitch]="connectionState">
+        <!-- Conectado -->
+        <ng-container *ngSwitchCase="'connected'">
+          <div class="w-3 h-3 rounded-full bg-green-500"></div>
+          <span class="text-sm">Conectado</span>
+        </ng-container>
+        
+        <!-- Reconectando -->
+        <ng-container *ngSwitchCase="'reconnecting'">
+          <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
+          <span class="text-sm text-yellow-600 font-medium">Reconectando...</span>
+        </ng-container>
+
+        <!-- Desconectado (default) -->
+        <ng-container *ngSwitchDefault>
+          <div class="w-3 h-3 rounded-full bg-red-500"></div>
+          <span class="text-sm">Desconectado</span>
+        </ng-container>
+      </div>
+
+      <!-- Botones de control -->
+      <div class="mt-3 space-y-2">
+        <button (click)="startMonitoring()" [disabled]="!canStartMonitoring"
+          class="w-full bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed">
+          {{ isMonitoring ? 'Monitoreando...' : 'Iniciar Monitoreo' }}
+        </button>
+        <button (click)="stopMonitoring()" [disabled]="!isConnected || !isMonitoring"
+          class="w-full bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed">
+          Detener Monitoreo
+        </button>
+      </div>
+    </div>
+
+    <!-- Alertas -->
+    <div class="mt-4" *ngIf="alerts.length > 0">
+      <h3 class="font-semibold mb-2 text-red-600">Alertas ({{ alerts.length }})</h3>
+      <div class="space-y-2 max-h-40 overflow-y-auto">
+        <div *ngFor="let alert of alerts" class="p-2 bg-red-100 border border-red-300 rounded text-xs">
+          <div *ngFor="let alerta of alert.alertas" class="text-red-700">
+            {{ alerta }}
+          </div>
+        </div>
+      </div>
+      <button (click)="clearAlerts()"
+        class="mt-2 w-full bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">
+        Limpiar Alertas
+      </button>
+    </div>
+
+    <!-- Selector de Gráficos -->
+    <div class="chart-selector">
+      <h3>Gráficos Visibles</h3>
+
+      <!-- Botones de control -->
+      <div class="flex gap-2 mb-3">
+        <button (click)="selectAllCharts()" [disabled]="allChartsSelected"
+          class="flex-1 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+          Todos
+        </button>
+        <button (click)="deselectAllCharts()" [disabled]="noChartsSelected"
+          class="flex-1 px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+          Ninguno
+        </button>
+      </div>
+
+      <div class="space-y-1">
+        <div *ngFor="let chart of chartOptions" class="chart-option">
+          <input type="checkbox" [id]="chart.value" [checked]="isChartVisible(chart.value)"
+            (change)="toggleChart(chart.value)">
+          <label [for]="chart.value">
+            {{ chart.label }}
+          </label>
+        </div>
+      </div>
+
+      <!-- Contador de gráficos seleccionados -->
+      <div class="mt-2 text-xs text-gray-500 text-center">
+        {{ selectedCharts.length }} de {{ chartOptions.length }} gráficos seleccionados
+      </div>
+    </div>
+  </aside>
+
+  <!-- Panel Principal -->
+  <main class="flex-1 pl-6">
+    <!-- Encabezado del sistema -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6 border-t-4 border-teal-500">
+      <div class="flex justify-between items-start flex-wrap gap-4">
+        <div>
+          <h1 class="text-xl font-bold mb-1">Sistema de Monitoreo Médico</h1>
+          <div class="text-sm space-y-1">
+            <div *ngIf="currentUser.role === 'patient'">
+              <p><strong>Paciente:</strong> {{currentUser.name}} {{currentUser.lastname}}</p>
+              <p><strong>No. Paciente:</strong> #{{ currentUserId }}</p>
+              <p><strong>Edad:</strong> 24</p>
+            </div>
+            <div *ngIf="currentUser.role === 'doctor'">
+              <p><strong>Doctor:</strong> {{currentUser.name}} {{currentUser.lastname}}</p>
+              <!-- Obtenemos la lista de pacientes del doctor -->
+              <p-select [options]="patientOptions" [(ngModel)]="selectedPatient" placeholder="Seleccionar paciente"
+                styleClass="w-full border border-gray-300 rounded" optionLabel="label"
+                (ngModelChange)="onPatientSelectionChange()">
+              </p-select>
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <button (click)="startMonitoring()" [disabled]="!canStartMonitoring"
+            class="bg-green-500 text-white px-4 py-1 rounded-lg shadow hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed">
+            {{ isMonitoring ? 'Monitoreando en tiempo real' : 'Monitorear en tiempo real' }}
+          </button>
+          <button (click)="clearAllData()" class="bg-blue-500 text-white px-4 py-1 rounded-lg shadow hover:bg-blue-600">
+            Limpiar datos
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid de Cards personalizado -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:grid-cols-4">
+
+      <div class="lg:col-span-2" *ngIf="chartVisibility.heartRate">
+        <p-card header="Ritmo Cardíaco" styleClass="h-full">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-2xl font-bold text-red-500">{{ realTimeData.heartRate || 0 }} ppm</span>
+            <span class="text-sm text-gray-500">Tiempo Real</span>
+          </div>
+          <div class="chart-container" style="height: 200px;">
+            <canvas baseChart [data]="heartRateChartData" [options]="heartRateChartOptions" type="line">
+            </canvas>
+          </div>
+        </p-card>
+      </div>
+
+      <div class="lg:col-span-2" *ngIf="chartVisibility.spo2">
+        <p-card header="Saturación de Oxígeno" styleClass="h-full">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-2xl font-bold text-blue-500">{{ realTimeData.spo2 || 0 }}%</span>
+            <span class="text-sm text-gray-500">Tiempo Real</span>
+          </div>
+          <div class="chart-container" style="height: 200px;">
+            <canvas baseChart [data]="spo2ChartData" [options]="spo2ChartOptions" type="bar">
+            </canvas>
+          </div>
+        </p-card>
+      </div>
+
+      <div class="lg:col-span-2" *ngIf="chartVisibility.temperature">
+        <p-card header="Temperatura Corporal" styleClass="h-full">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-2xl font-bold text-orange-500">{{ realTimeData.temperature || 0 }}°C</span>
+            <span class="text-sm text-gray-500">Tiempo Real</span>
+          </div>
+          <div class="chart-container" style="height: 200px;">
+            <canvas baseChart [data]="temperatureChartData" [options]="temperatureChartOptions" type="bar">
+            </canvas>
+          </div>
+        </p-card>
+      </div>
+
+      <div class="lg:col-span-2" *ngIf="chartVisibility.bloodPressure">
+        <p-card header="Presión Arterial" styleClass="h-full">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-2xl font-bold text-green-500">
+              {{ realTimeData.bloodPressure.systolic || 0 }}/{{ realTimeData.bloodPressure.diastolic || 0 }} mmHg
+            </span>
+            <span class="text-sm text-gray-500">Tiempo Real</span>
+          </div>
+          <div class="grid grid-cols-2 gap-4 mt-6">
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+              <div class="text-3xl font-bold text-green-600 mb-2">
+                {{ realTimeData.bloodPressure.systolic || 0 }}
+              </div>
+              <div class="text-sm text-gray-600 font-semibold">
+                Sistólica (mmHg)
+              </div>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+              <div class="text-3xl font-bold text-green-600 mb-2">
+                {{ realTimeData.bloodPressure.diastolic || 0 }}
+              </div>
+              <div class="text-sm text-gray-600 font-semibold">
+                Diastólica (mmHg)
+              </div>
+            </div>
+          </div>
+        </p-card>
+      </div>
+
+      <div class="lg:col-span-4" *ngIf="chartVisibility.ecg">
+        <p-card header="Electrocardiograma" styleClass="h-full">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-2xl font-bold text-purple-500">Señal Activa</span>
+            <span class="text-sm text-gray-500">Tiempo Real</span>
+          </div>
+          <div class="chart-container" style="height: 200px;">
+            <canvas baseChart [data]="ecgChartData" [options]="ecgChartOptions" type="line">
+            </canvas>
+          </div>
+        </p-card>
+      </div>
+
+    </div>
+  </main>
+</div>

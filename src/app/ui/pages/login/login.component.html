@@ -1,0 +1,149 @@
+<!-- Fondo animado SVG -->
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  class="wave-background"
+  viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice">
+  <defs>
+    <linearGradient id="bg">
+      <stop offset="0%" style="stop-color:rgba(130, 158, 249, 0.06)"></stop>
+      <stop offset="50%" style="stop-color:rgba(76, 190, 255, 0.6)"></stop>
+      <stop offset="100%" style="stop-color:rgba(115, 209, 72, 0.2)"></stop>
+    </linearGradient>
+    <path id="wave" fill="url(#bg)" d="M-363.852,502.589c0,0,236.988-41.997,505.475,0
+s371.981,38.998,575.971,0s293.985-39.278,505.474,5.859s493.475,48.368,716.963-4.995v560.106H-363.852V502.589z" />
+  </defs>
+  <g>
+    <use xlink:href='#wave' opacity=".3">
+      <animateTransform attributeName="transform" type="translate" dur="10s"
+        values="270 230; -334 180; 270 230" repeatCount="indefinite"
+        calcMode="spline" keyTimes="0; .5; 1"
+        keySplines="0.42, 0, 0.58, 1.0;0.42, 0, 0.58, 1.0" />
+    </use>
+    <use xlink:href='#wave' opacity=".6">
+      <animateTransform attributeName="transform" type="translate" dur="8s"
+        values="-270 230;243 220;-270 230" repeatCount="indefinite"
+        calcMode="spline" keyTimes="0; .6; 1"
+        keySplines="0.42, 0, 0.58, 1.0;0.42, 0, 0.58, 1.0" />
+    </use>
+    <use xlink:href='#wave' opacity=".9">
+      <animateTransform attributeName="transform" type="translate" dur="6s"
+        values="0 230;-140 200;0 230" repeatCount="indefinite"
+        calcMode="spline" keyTimes="0; .4; 1"
+        keySplines="0.42, 0, 0.58, 1.0;0.42, 0, 0.58, 1.0" />
+    </use>
+  </g>
+</svg>
+
+<!-- Contenido del login -->
+<div class="min-h-screen relative z-10 flex items-center justify-center p-4">
+  <div class="flex w-full max-w-5xl bg-white rounded-xl shadow-2xl overflow-hidden relative">
+
+    <!-- Form Section -->
+    <div class="w-1/2 bg-[#0C71A3] p-8 lg:p-12 flex flex-col justify-center relative" 
+         [ngClass]="{ 'fade-in-form': showLoginForm }">
+      <div class="w-full max-w-sm mx-auto">
+        <!-- Logo -->
+        <div class="mb-8 text-center">
+          <img src="logo.png" alt="logo" class="h-20 mx-auto mb-6" />
+          <h2 class="text-2xl font-bold text-white mb-8">Sign in</h2>
+        </div>
+
+        <!-- Form -->
+        <form class="space-y-6">
+          <!-- Email Field -->
+          <div class="space-y-2">
+            <label for="email" class="block text-sm font-medium text-white">
+              Correo
+            </label>
+            <input 
+              id="email" 
+              type="email" 
+              [(ngModel)]="email" 
+              name="email"
+              placeholder="Ingresa tu correo"
+              class="w-full px-4 py-3 bg-white border-0 rounded-md text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+            />
+          </div>
+
+          <!-- Password Field -->
+          <div class="space-y-2">
+            <label for="password" class="block text-sm font-medium text-white">
+              Contraseña
+            </label>
+            <input 
+              id="password" 
+              type="password" 
+              [(ngModel)]="password" 
+              name="password"
+              placeholder="Ingresa tu contraseña"
+              class="w-full px-4 py-3 bg-white border-0 rounded-md text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+            />
+          </div>
+
+          <!-- Login Button -->
+          <button 
+            type="button"
+            (click)="login()"
+            class="w-full bg-white text-[#0C71A3] font-semibold py-3 px-6 rounded-md hover:bg-gray-100 transition-colors duration-200 mt-6"
+          >
+            Log in
+          </button>
+
+          <!-- Register Link -->
+          <div class="text-center mt-4">
+            <a 
+              (click)="goToRegister()"
+              class="text-white text-sm hover:text-gray-200 cursor-pointer underline"
+            >
+              No tengo cuenta
+            </a>
+          </div>
+
+          <!-- Error Message -->
+          <p *ngIf="error" class="text-red-200 text-sm text-center bg-red-500 bg-opacity-20 p-3 rounded-md mt-4">
+            {{ error }}
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Diagonal Cut -->
+    <div class="absolute left-1/2 top-0 h-full w-32 bg-white transform -skew-x-12 z-10"></div>
+
+    <!-- Image Section -->
+    <div class="w-1/2 bg-[#28749A] flex items-center justify-center p-8 relative" 
+         [ngClass]="{ 'fade-in-doctor': showDoctorAnimation }">
+      <div class="text-center z-20 ml-16">
+        <!-- Hexagon Container -->
+        <div class="relative">
+          <!-- Hexagon Shape -->
+          <div class="w-48 h-48 bg-white rounded-full flex items-center justify-center shadow-lg relative overflow-hidden">
+            <!-- Doctor Image -->
+            <img 
+              src="modelo.svg" 
+              alt="modelo" 
+              class="w-70 h-40 rounded-full object-cover"
+            />
+          </div>
+          
+          <!-- SmartVitals Text -->
+          <div class="mt-4">
+            <div class="flex items-center justify-center mb-1">
+              <span class="text-white font-bold text-lg">SmartVitals</span>
+            </div>
+            <p class="text-white text-sm opacity-90">Evotek Company</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<ng-container *ngIf="showRegisterModal">
+  <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <app-register-modal (close)="closeRegisterModal()"></app-register-modal>
+    </div>
+  </div>
+</ng-container>

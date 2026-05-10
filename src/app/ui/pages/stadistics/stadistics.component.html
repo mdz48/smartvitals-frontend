@@ -1,0 +1,444 @@
+<app-navbar></app-navbar>
+
+<!-- Toast para mensajes -->
+<p-toast></p-toast>
+
+<div class="statistics-container">
+    <div class="header-section">
+        <h1>Estadísticas de Paciente</h1>
+
+        <!-- Selector de paciente para doctores -->
+        <div class="filters-section" *ngIf="currentUser.role === 'doctor'">
+            <div class="filter-item">
+                <label for="patient-select">Seleccionar Paciente:</label>
+                <p-select id="patient-select" [options]="patientOptions" [(ngModel)]="selectedPatient"
+                    (onChange)="onPatientChange()" placeholder="Seleccione un paciente" optionLabel="label"
+                    optionValue="value" [style]="{'width': '300px'}">
+                </p-select>
+            </div>
+
+            <div class="filter-item">
+                <label for="date-range">Rango de Fechas:</label>
+                <p-datePicker id="date-range" [(ngModel)]="rangeDates" selectionMode="range" [readonlyInput]="true"
+                    placeholder="Seleccionar rango" [style]="{'width': '250px'}">
+                </p-datePicker>
+            </div>
+
+            <p-button label="Aplicar Filtros" (onClick)="applyDateFilter()"
+                [disabled]="!selectedPatient || selectedPatient === null">
+            </p-button>
+
+            <p-button label="Limpiar Filtros" (onClick)="clearFilters()" severity="secondary"
+                [disabled]="(!selectedPatient || selectedPatient === null) && !rangeDates" outlined>
+            </p-button>
+        </div>
+
+        <!-- Selector de fechas para pacientes -->
+        <div class="filters-section" *ngIf="currentUser.role === 'patient'">
+            <div class="filter-item">
+                <label for="date-range-patient">Rango de Fechas:</label>
+                <p-datePicker id="date-range-patient" [(ngModel)]="rangeDates" selectionMode="range"
+                    [readonlyInput]="true" placeholder="Seleccionar rango" [style]="{'width': '250px'}">
+                </p-datePicker>
+            </div>
+
+            <p-button label="Aplicar Filtro" (onClick)="applyDateFilter()">
+            </p-button>
+
+            <p-button label="Limpiar Filtro" (onClick)="clearFilters()" severity="secondary" [disabled]="!rangeDates"
+                outlined>
+            </p-button>
+        </div>
+    </div>
+
+    <!-- Selector de Gráficos -->
+    <div class="chart-selector"
+        *ngIf="(statistics || selectedPatient || currentUser.role === 'patient') && !hasError && !isLoading">
+        <h3>Seleccionar Gráficos a Mostrar</h3>
+
+        <!-- Botones de control -->
+        <div class="chart-selector-controls">
+            <button (click)="selectAllCharts()" [disabled]="allChartsSelected" class="select-all-btn">
+                Seleccionar Todos
+            </button>
+            <button (click)="deselectAllCharts()" [disabled]="noChartsSelected" class="deselect-all-btn">
+                Deseleccionar Todos
+            </button>
+        </div>
+
+        <!-- Grid de opciones de gráficos -->
+        <div class="chart-options-grid">
+            <div *ngFor="let chart of chartOptions" class="chart-option" [class.selected]="isChartVisible(chart.value)">
+                <input type="checkbox" [id]="chart.value" [checked]="isChartVisible(chart.value)"
+                    (change)="toggleChart(chart.value)">
+                <label [for]="chart.value">
+                    {{ chart.label }}
+                </label>
+            </div>
+        </div>
+
+        <!-- Contador de gráficos seleccionados -->
+        <div class="chart-counter">
+            {{ selectedCharts.length }} de {{ chartOptions.length }} gráficos seleccionados
+        </div>
+    </div>
+
+    <!-- Mensaje cuando no hay gráficos seleccionados -->
+    <div class="no-charts-selected" *ngIf="statistics && noChartsSelected && !hasError && !isLoading">
+        <p-card>
+            <div class="no-data-content">
+                <i class="pi pi-eye-slash" style="font-size: 3rem; color: #6c757d;"></i>
+                <h3>No hay gráficos seleccionados</h3>
+                <p>Seleccione al menos un gráfico para visualizar las estadísticas.</p>
+            </div>
+        </p-card>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="content-section" *ngIf="statistics && !noChartsSelected && !hasError && !isLoading">
+
+        <!-- Resumen general -->
+        <div class="summary-cards">
+            <p-card header="Resumen del Período">
+                <div class="summary-content">
+                    <div class="summary-item">
+                        <span class="label">Total de Registros:</span>
+                        <span class="value">{{ statistics.data.estadisticas.resumen.total_registros }}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Período:</span>
+                        <span class="value">
+                            {{ statistics.data.estadisticas.resumen.periodo_analisis.fecha_inicio }} -
+                            {{ statistics.data.estadisticas.resumen.periodo_analisis.fecha_fin }}
+                        </span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Mayor Riesgo:</span>
+                        <span class="value risk-highlight">{{ getHighestRisk() }}</span>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+
+        <!-- Gráficos principales -->
+        <div class="charts-grid">
+
+            <!-- Gráfico de Estadísticas -->
+            <div class="chart-container" *ngIf="chartVisibility.statsBar">
+                <p-card header="Estadísticas de Signos Vitales">
+                    <div class="chart-wrapper">
+                        <canvas baseChart [data]="statsBarChartData" [options]="statsBarChartOptions" type="bar">
+                        </canvas>
+                    </div>
+                </p-card>
+            </div>
+
+            <!-- Gráfico de Riesgos -->
+            <div class="chart-container" *ngIf="chartVisibility.riskRadar">
+                <p-card header="Probabilidades de Riesgo">
+                    <div class="chart-wrapper doughnut-chart">
+                        <canvas baseChart [data]="riskDoughnutChartData" [options]="riskDoughnutChartOptions"
+                            type="doughnut">
+                        </canvas>
+                    </div>
+                </p-card>
+            </div>
+
+            <!-- Gráfico de Comparación con Rangos -->
+            <div class="chart-container full-width" *ngIf="chartVisibility.rangeComparison">
+                <p-card header="Comparación con Rangos de Riesgo">
+                    <div class="chart-wrapper">
+                        <canvas baseChart [data]="rangeLineChartData" [options]="rangeLineChartOptions" type="line">
+                        </canvas>
+                    </div>
+                </p-card>
+            </div>
+
+            <!-- Gráfico de Evolución de Temperatura -->
+            <div class="chart-container full-width" *ngIf="chartVisibility.temperatureEvolution">
+                <p-card header="Evolución de Temperatura con Análisis Estadístico">
+                    <div class="chart-wrapper temperature-evolution">
+                        <canvas baseChart [data]="temperatureEvolutionChartData"
+                            [options]="temperatureEvolutionChartOptions" type="line">
+                        </canvas>
+                    </div>
+                    <div class="statistical-info">
+                        <div class="stat-info-item">
+                            <span class="label">Varianza:</span>
+                            <span class="value">{{ getVariance().toFixed(4) }}°C²</span>
+                        </div>
+                        <div class="stat-info-item">
+                            <span class="label">Desviación Estándar:</span>
+                            <span class="value">{{
+                                statistics.data.estadisticas.temperatura.desviacion_estandar.toFixed(4)
+                                }}°C</span>
+                        </div>
+                        <div class="stat-info-item">
+                            <span class="label">Rango:</span>
+                            <span class="value">{{ statistics.data.estadisticas.temperatura.rango.toFixed(2) }}°C</span>
+                        </div>
+                        <div class="stat-info-item">
+                            <span class="label">Registros:</span>
+                            <span class="value">{{ medicalRecords.length }} mediciones</span>
+                        </div>
+                    </div>
+                </p-card>
+            </div>
+
+            <!-- Gráfico de Evolución de Frecuencia Cardíaca -->
+            <div class="chart-container full-width" *ngIf="chartVisibility.heartRateEvolution">
+                <p-card header="Evolución de Frecuencia Cardíaca con Análisis Estadístico">
+                    <div class="chart-wrapper heartrate-evolution">
+                        <canvas baseChart [data]="heartRateEvolutionChartData"
+                            [options]="temperatureEvolutionChartOptions" type="line">
+                        </canvas>
+                    </div>
+                    <div class="statistical-info">
+                        <div class="stat-info-item">
+                            <span class="label">Media:</span>
+                            <span class="value">{{ statistics.data.estadisticas.frecuencia_cardiaca.media.toFixed(2) }}
+                                bpm</span>
+                        </div>
+                        <div class="stat-info-item">
+                            <span class="label">Mediana:</span>
+                            <span class="value">{{ statistics.data.estadisticas.frecuencia_cardiaca.mediana.toFixed(2)
+                                }} bpm</span>
+                        </div>
+                        <div class="stat-info-item">
+                            <span class="label">Desviación Estándar:</span>
+                            <span class="value">{{
+                                statistics.data.estadisticas.frecuencia_cardiaca.desviacion_estandar.toFixed(2) }}
+                                bpm</span>
+                        </div>
+                        <div class="stat-info-item">
+                            <span class="label">Rango:</span>
+                            <span class="value">{{ statistics.data.estadisticas.frecuencia_cardiaca.rango.toFixed(2) }}
+                                bpm</span>
+                        </div>
+                    </div>
+                </p-card>
+            </div>
+
+            <!-- Gráfico de Evolución de Saturación de Oxígeno -->
+            <div class="chart-container full-width" *ngIf="chartVisibility.oxygenSaturationEvolution">
+                <p-card header="Evolución de Saturación de Oxígeno con Análisis Estadístico">
+                    <div class="chart-wrapper oxygen-evolution">
+                        <canvas baseChart [data]="oxygenSaturationEvolutionChartData"
+                            [options]="temperatureEvolutionChartOptions" type="line">
+                        </canvas>
+                    </div>
+                    <div class="statistical-info">
+                        <div class="stat-info-item">
+                            <span class="label">Media:</span>
+                            <span class="value">{{ statistics.data.estadisticas.saturacion_oxigeno.media.toFixed(2)
+                                }}%</span>
+                        </div>
+                        <div class="stat-info-item">
+                            <span class="label">Mediana:</span>
+                            <span class="value">{{ statistics.data.estadisticas.saturacion_oxigeno.mediana.toFixed(2)
+                                }}%</span>
+                        </div>
+                        <div class="stat-info-item">
+                            <span class="label">Desviación Estándar:</span>
+                            <span class="value">{{
+                                statistics.data.estadisticas.saturacion_oxigeno.desviacion_estandar.toFixed(2)
+                                }}%</span>
+                        </div>
+                        <div class="stat-info-item">
+                            <span class="label">Rango:</span>
+                            <span class="value">{{ statistics.data.estadisticas.saturacion_oxigeno.rango.toFixed(2)
+                                }}%</span>
+                        </div>
+                    </div>
+                </p-card>
+            </div>
+
+            <!-- Gráfico de Agitación (Scatter Plot) -->
+            <div class="chart-container full-width" *ngIf="chartVisibility.agitationScatter">
+                <p-card header="Temperatura vs Frecuencia Cardíaca (Probabilidad de Agitación)">
+                    <div class="chart-wrapper">
+                        <canvas baseChart [data]="agitationScatterChartData" [options]="agitationScatterChartOptions"
+                            type="scatter">
+                        </canvas>
+                    </div>
+                    <div class="statistical-info mt-2">
+                        <span class="label">Probabilidad Global de Agitación:</span>
+                        <span class="value" [ngStyle]="{color: getAgitationProbabilityColor()}">
+                            {{ getAgitationProbability() }}%
+                        </span>
+                    </div>
+                </p-card>
+            </div>
+
+            <!-- Gráfico de Shock (Scatter Plot) -->
+            <div class="chart-container full-width" *ngIf="chartVisibility.shockScatter">
+                <p-card header="Presión Arterial vs Saturación O2 (Probabilidad de Shock)">
+                    <div class="chart-wrapper">
+                        <canvas baseChart [data]="shockScatterChartData" [options]="shockScatterChartOptions"
+                            type="scatter">
+                        </canvas>
+                    </div>
+                    <div class="statistical-info mt-2">
+                        <span class="label">Probabilidad Global de Shock:</span>
+                        <span class="value" [ngStyle]="{color: getShockProbabilityColor()}">
+                            {{ getShockProbability() }}%
+                        </span>
+                    </div>
+                </p-card>
+            </div>
+        </div>
+
+        <!-- Detalles de riesgos -->
+        <div class="risk-details">
+            <p-card header="Análisis Detallado de Riesgos">
+                <div class="risk-grid">
+                    <div class="risk-item" *ngFor="let risk of [
+            {key: 'riesgo_taquicardia', label: 'Taquicardia', value: riskData.riesgo_taquicardia},
+            {key: 'riesgo_bradicardia', label: 'Bradicardia', value: riskData.riesgo_bradicardia},
+            {key: 'riesgo_taquipnea', label: 'Taquipnea', value: riskData.riesgo_taquipnea},
+            {key: 'riesgo_bradipnea', label: 'Bradipnea', value: riskData.riesgo_bradipnea},
+            {key: 'riesgo_fiebre', label: 'Fiebre', value: riskData.riesgo_fiebre},
+            {key: 'riesgo_hipotermia', label: 'Hipotermia', value: riskData.riesgo_hipotermia},
+            {key: 'riesgo_hipertension', label: 'Hipertensión', value: riskData.riesgo_hipertension},
+            {key: 'riesgo_hipotension', label: 'Hipotensión', value: riskData.riesgo_hipotension},
+            {key: 'riesgo_baja_saturacion', label: 'Baja Saturación', value: riskData.riesgo_baja_saturacion}
+          ]">
+                        <div class="risk-card" [style.border-left-color]="getRiskColor(risk.value)">
+                            <div class="risk-header">
+                                <h4>{{ risk.label }}</h4>
+                                <span class="risk-level" [style.color]="getRiskColor(risk.value)">
+                                    {{ getRiskLevel(risk.value) }}
+                                </span>
+                            </div>
+                            <div class="risk-progress">
+                                <p-progressBar [value]="risk.value" [style]="{'height': '10px'}"
+                                    [color]="getRiskColor(risk.value)">
+                                </p-progressBar>
+                                <span class="risk-percentage">{{ risk.value }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+
+        <!-- Tabla de estadísticas detalladas -->
+        <div class="detailed-stats">
+            <p-card header="Estadísticas Detalladas">
+                <div class="stats-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Parámetro</th>
+                                <th>Media</th>
+                                <th>Mediana</th>
+                                <th>Moda</th>
+                                <th>Desv. Estándar</th>
+                                <th>Mínimo</th>
+                                <th>Máximo</th>
+                                <th>Rango</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Temperatura (°C)</strong></td>
+                                <td>{{ statistics.data.estadisticas.temperatura.media.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.temperatura.mediana.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.temperatura.moda.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.temperatura.desviacion_estandar.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.temperatura.minimo.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.temperatura.maximo.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.temperatura.rango.toFixed(2) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Frecuencia Cardíaca (bpm)</strong></td>
+                                <td>{{ statistics.data.estadisticas.frecuencia_cardiaca.media.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.frecuencia_cardiaca.mediana.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.frecuencia_cardiaca.moda.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.frecuencia_cardiaca.desviacion_estandar.toFixed(2)
+                                    }}
+                                </td>
+                                <td>{{ statistics.data.estadisticas.frecuencia_cardiaca.minimo.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.frecuencia_cardiaca.maximo.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.frecuencia_cardiaca.rango.toFixed(2) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Saturación O2 (%)</strong></td>
+                                <td>{{ statistics.data.estadisticas.saturacion_oxigeno.media.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.saturacion_oxigeno.mediana.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.saturacion_oxigeno.moda.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.saturacion_oxigeno.desviacion_estandar.toFixed(2) }}
+                                </td>
+                                <td>{{ statistics.data.estadisticas.saturacion_oxigeno.minimo.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.saturacion_oxigeno.maximo.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.saturacion_oxigeno.rango.toFixed(2) }}</td>
+                            </tr>
+                            <tr *ngIf="statistics.data.estadisticas.presion_arterial.maximo > 0">
+                                <td><strong>Presión Arterial (mmHg)</strong></td>
+                                <td>{{ statistics.data.estadisticas.presion_arterial.media.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.presion_arterial.mediana.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.presion_arterial.moda.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.presion_arterial.desviacion_estandar.toFixed(2) }}
+                                </td>
+                                <td>{{ statistics.data.estadisticas.presion_arterial.minimo.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.presion_arterial.maximo.toFixed(2) }}</td>
+                                <td>{{ statistics.data.estadisticas.presion_arterial.rango.toFixed(2) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </p-card>
+        </div>
+    </div>
+
+    <!-- Indicador de carga -->
+    <div class="loading-container" *ngIf="isLoading && !hasError">
+        <p-card>
+            <div class="no-data-content">
+                <i class="pi pi-spin pi-spinner" style="font-size: 3rem; color: #007bff;"></i>
+                <h3>Cargando estadísticas...</h3>
+                <p>Por favor espere mientras se cargan los datos.</p>
+            </div>
+        </p-card>
+    </div>
+
+    <!-- Mensaje de error -->
+    <div class="error-container" *ngIf="hasError && !isLoading">
+        <p-card>
+            <div class="no-data-content">
+                <i class="pi pi-exclamation-triangle" style="font-size: 3rem; color: #dc3545;"></i>
+                <h3>Error al cargar datos</h3>
+                <p>{{ errorMessage }}</p>
+                <div style="margin-top: 1rem;">
+                    <p-button label="Reintentar" icon="pi pi-refresh" (onClick)="retryLoad()"
+                        [style]="{'margin-right': '0.5rem'}">
+                    </p-button>
+                </div>
+            </div>
+        </p-card>
+    </div>
+
+    <!-- Mensaje cuando no hay datos (solo si no hay error ni carga) -->
+    <div class="no-data"
+        *ngIf="!statistics && !hasError && !isLoading && (selectedPatient || currentUser.role === 'patient')">
+        <p-card>
+            <div class="no-data-content">
+                <i class="pi pi-chart-line" style="font-size: 3rem; color: #6c757d;"></i>
+                <h3>No hay datos disponibles</h3>
+                <p>No se encontraron estadísticas para el paciente seleccionado en el período especificado.</p>
+            </div>
+        </p-card>
+    </div>
+
+    <!-- Mensaje inicial para doctores -->
+    <div class="no-selection"
+        *ngIf="!statistics && !hasError && !isLoading && !selectedPatient && currentUser.role === 'doctor'">
+        <p-card>
+            <div class="no-data-content">
+                <i class="pi pi-user" style="font-size: 3rem; color: #6c757d;"></i>
+                <h3>Seleccione un paciente</h3>
+                <p>Seleccione un paciente de la lista para ver sus estadísticas médicas.</p>
+            </div>
+        </p-card>
+    </div>
+</div>

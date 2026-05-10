@@ -1,0 +1,102 @@
+<p-toast></p-toast>
+
+<p-dialog header="Registro de Usuario" [(visible)]="visible" [modal]="true" [closable]="true" [dismissableMask]="false"
+  [draggable]="false" [resizable]="false" [style]="{width: '500px'}" (onHide)="closeModal()">
+
+  <form [formGroup]="registerForm" (ngSubmit)="register()" class="register-form">
+
+    <!-- Nombre y Apellido -->
+    <div class="form-row">
+      <div class="form-field">
+        <label for="name">Nombre *</label>
+        <input pInputText id="name" formControlName="name" [class.ng-invalid]="isFieldInvalid('name')"
+          placeholder="Ingresa tu nombre">
+        <small class="p-error" *ngIf="isFieldInvalid('name')">
+          {{ getFieldError('name') }}
+        </small>
+      </div>
+
+      <div class="form-field">
+        <label for="lastname">Apellido *</label>
+        <input pInputText id="lastname" formControlName="lastname" [class.ng-invalid]="isFieldInvalid('lastname')"
+          placeholder="Ingresa tu apellido">
+        <small class="p-error" *ngIf="isFieldInvalid('lastname')">
+          {{ getFieldError('lastname') }}
+        </small>
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="form-field">
+      <label for="email">Correo electrónico *</label>
+      <input pInputText id="email" type="email" formControlName="email" [class.ng-invalid]="isFieldInvalid('email')"
+        placeholder="correo@ejemplo.com">
+      <small class="p-error" *ngIf="isFieldInvalid('email')">
+        {{ getFieldError('email') }}
+      </small>
+    </div>
+
+    <!-- Contraseña -->
+    <div class="form-field">
+      <label for="password">Contraseña *</label>
+      <p-password id="password" formControlName="password" [toggleMask]="true" [feedback]="true"
+        [class.ng-invalid]="isFieldInvalid('password')" placeholder="Mínimo 6 caracteres">
+      </p-password>
+      <small class="p-error" *ngIf="isFieldInvalid('password')">
+        {{ getFieldError('password') }}
+      </small>
+    </div>
+
+    <!-- Rol y Género -->
+    <div class="form-row">
+      <div class="form-field">
+        <label for="role">Rol *</label>
+        <p-dropdown id="role" formControlName="role" [options]="roleOptions" placeholder="Selecciona un rol"
+          [class.ng-invalid]="isFieldInvalid('role')">
+        </p-dropdown>
+        <small class="p-error" *ngIf="isFieldInvalid('role')">
+          {{ getFieldError('role') }}
+        </small>
+      </div>
+
+      <div class="form-field">
+        <label for="gender">Género</label>
+        <p-dropdown id="gender" formControlName="gender" [options]="genderOptions" placeholder="Selecciona género">
+        </p-dropdown>
+      </div>
+    </div>
+
+    <!-- Edad -->
+    <div class="form-field">
+      <label for="age">Edad</label>
+      <p-inputNumber id="age" formControlName="age" [min]="1" [max]="120" [showButtons]="true"
+        [class.ng-invalid]="isFieldInvalid('age')" placeholder="Tu edad">
+      </p-inputNumber>
+      <small class="p-error" *ngIf="isFieldInvalid('age')">
+        {{ getFieldError('age') }}
+      </small>
+    </div>
+
+    <!-- Embarazo (solo para mujeres) -->
+    <div class="form-field" *ngIf="isPregnancyFieldVisible">
+      <div class="checkbox-field">
+        <p-checkbox id="pregnant" formControlName="pregnant" binary="true">
+        </p-checkbox>
+        <label for="pregnant">¿Está embarazada?</label>
+      </div>
+    </div>
+
+  </form>
+
+  <ng-template pTemplate="footer">
+    <div class="form-actions">
+      <p-button label="Cancelar" icon="pi pi-times" severity="secondary" [text]="true" (onClick)="closeModal()">
+      </p-button>
+
+      <p-button label="Registrarse" icon="pi pi-user-plus" type="submit" [loading]="isLoading"
+        [disabled]="registerForm.invalid || isLoading" (onClick)="register()">
+      </p-button>
+    </div>
+  </ng-template>
+
+</p-dialog>
